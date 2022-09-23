@@ -11,6 +11,12 @@
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
+    "paths": {
+      "ngx-file-uploader": [
+        "dist/ngx-file-uploader/ngx-file-uploader",
+        "dist/ngx-file-uploader"
+      ]
+    },
     "experimentalDecorators": true,
     "moduleResolution": "node",
     "importHelpers": true,

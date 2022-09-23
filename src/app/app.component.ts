@@ -3,8 +3,16 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  title = 'ngx-file-uploader-demo';
+  public dataModel = '';
+
+  public upload(file: any) {
+    this.dataModel = 'https://unsplash.it/200/300';
+  }
+
+  public clear() {
+    this.dataModel = '';
+  }
 }

@@ -1,0 +1,229 @@
+<div
+  *ngIf="message"
+  class="alert alert-{{ messageType }} alert-dismissible"
+  role="alert"
+>
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ message }}
+</div>
+<div *ngIf="backButton">
+  <button
+    class="btn btn-default image-preview-primary"
+    type="button"
+    (click)="back()"
+  >
+    <span class="glyphicon glyphicon-circle-arrow-left"></span> Back
+  </button>
+</div>
+<div *ngIf="selectFileType" class="panel panel-primary">
+  <div class="card">
+    <div class="card-body">
+      <a (click)="getUrl()" style="cursor: pointer"
+        ><u>{{ value }} </u></a
+      >
+      <button
+        *ngIf="value"
+        type="button"
+        (click)="clear()"
+        class="btn btn-default image-preview-clear"
+      >
+        <span class="glyphicon glyphicon-remove"></span> Clear
+      </button>
+    </div>
+  </div>
+  <div class="panel-heading">UPLOAD FILE TYPE</div>
+  <div class="panel-body">
+    <div class="row-cb">
+      <span
+        ><input
+          name="image"
+          id="ima"
+          (change)="toggleVisibility('image')"
+          type="checkbox"
+      /></span>
+      <label for="ima">Image</label>
+
+      <div class="clear-both"></div>
+    </div>
+    <div class="row-cb">
+      <span
+        ><input
+          name="option"
+          id="pdf"
+          (change)="toggleVisibility('pdf')"
+          type="checkbox"
+      /></span>
+      <label for="pdf">PDF</label>
+
+      <div class="clear-both"></div>
+    </div>
+    <!-- <div *ngIf="both" class="row-cb">
+<span><input name="option" id="both" (change)="toggleVisibility('both')" type="checkbox" /></span>
+<label  for="both">Image & PDF</label>
+
+<div class="clear-both"></div>
+</div> -->
+    <div class="row-cb">
+      <span
+        ><input
+          name="camera"
+          id="camera"
+          (change)="toggleVisibility('liveCamera')"
+          type="checkbox"
+      /></span>
+      <label for="camera">Live Camera</label>
+
+      <div class="clear-both"></div>
+    </div>
+  </div>
+</div>
+<div [hidden]="!urls[0]" class="panel panel-primary">
+  <div class="panel-heading">SELECTED FILES</div>
+  <div class="panel-body">
+    <div style="display: inline-block" *ngFor="let url of urls; let i = index">
+      <a class="column" id="caption">
+        <img
+          style="
+            border: 1px solid rgb(97, 97, 97);
+            margin: 2px;
+            border-radius: 4px;
+            padding: 5px;
+          "
+          id="img{{ i }}"
+          [src]="url.data || url.imageAsDataUrl"
+          onError="this.onerror=null;this.src='https://store-images.s-microsoft.com/image/apps.34961.13510798887621962.47b62c4c-a0c6-4e3c-87bb-509317d9c364.a6354b48-c68a-47fa-b69e-4cb592d42ffc?mode=scale&q=90&h=300&w=300' ;"
+          class="rounded mb-3"
+          width="100"
+          height="200"
+        />
+        <div class="text">
+          <h2
+            title="Click to Delete File {{ url.name }}"
+            (click)="delete(url)"
+            style="color: red; font-family: fantasy"
+          >
+            <span class="glyphicon glyphicon-trash"></span>REMOVE
+          </h2>
+        </div>
+      </a>
+    </div>
+  </div>
+  <div class="panel-footer">
+    <button
+      *ngIf="UploadCaptions"
+      type="button"
+      (click)="upload()"
+      class="button pull-right"
+    >
+      <span class="glyphicon glyphicon-upload"></span> Upload Files
+    </button>
+    <button
+      *ngIf="(!pdfAvailable && fileUpload) || liveCamera || merge"
+      type="button"
+      [disabled]="!urls[1]"
+      (click)="mergeImages()"
+      title="merge the images as pages in one pdf document"
+      class="button"
+    >
+      <span class="glyphicon glyphicon-upload"></span> Merge Files
+    </button>
+  </div>
+</div>
+<div *ngIf="fileUpload">
+  <div class="input-group">
+    <input type="text" class="form-control" readonly [(ngModel)]="value" />
+    <div class="input-group-btn">
+      <div class="btn btn-default image-preview-input">
+        <span class="glyphicon glyphicon-folder-open"></span>
+        <span class="image-preview-input-title">SELECT FILE</span>
+        <input
+          *ngIf="multiple"
+          type="file"
+          multiple
+          accept="{{ fileType }}"
+          (blur)="onBlur()"
+          name="input-file-preview"
+          (change)="onChange($event)"
+        />
+        <input
+          *ngIf="!multiple"
+          type="file"
+          accept="{{ fileType }}"
+          (blur)="onBlur()"
+          name="input-file-preview"
+          (change)="onChange($event)"
+        />
+      </div>
+      <button
+        *ngIf="value"
+        type="button"
+        (click)="clear()"
+        class="btn btn-default image-preview-clear"
+      >
+        <span class="glyphicon glyphicon-remove"></span> Clear
+      </button>
+      <button type="button" (click)="upload()" class="button">
+        <span class="glyphicon glyphicon-upload"></span> Upload
+      </button>
+    </div>
+  </div>
+  <div *ngIf="!mobile" class="image-upload-wrap">
+    <input
+      *ngIf="multiple"
+      class="file-upload-input"
+      type="file"
+      (change)="onChange($event)"
+      multiple
+      accept="{{ fileType }}"
+    />
+    <input
+      *ngIf="!multiple"
+      class="file-upload-input"
+      type="file"
+      (change)="onChange($event)"
+      accept="{{ fileType }}"
+    />
+    <div class="drag-text">
+      <h3>Drag and Drop file(s)</h3>
+    </div>
+  </div>
+</div>
+<div *ngIf="liveCamera">
+  <div style="text-align: center">
+    <div>
+      <webcam
+        [height]="700"
+        [width]="450"
+        [trigger]="triggerObservable"
+        (imageCapture)="handleImage($event)"
+        *ngIf="showWebcam"
+        [allowCameraSwitch]="allowCameraSwitch"
+        [switchCamera]="nextWebcamObservable"
+        [videoOptions]="videoOptions"
+        [imageQuality]="1"
+        (cameraSwitched)="cameraWasSwitched($event)"
+        (initError)="handleInitError($event)"
+      ></webcam>
+      <br />
+      <button
+        class="btn btn-default image-preview-clear"
+        (click)="triggerSnapshot()"
+      >
+        <span class="glyphicon glyphicon-camera"></span>Take a Snapshot
+      </button>
+      <button
+        class="btn btn-default image-preview-clear"
+        (click)="showNextWebcam(true)"
+        [disabled]="!multipleWebcamsAvailable"
+      >
+        Change Camera
+      </button>
+    </div>
+  </div>
+  <h4 *ngIf="errors.length > 0">Messages:</h4>
+  <ul *ngFor="let error of errors">
+    <li>{{ error | json }}</li>
+  </ul>
+</div>

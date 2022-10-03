@@ -20,6 +20,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "allowedCommonJsDependencies": ["core-js", "raf"],
             "outputPath": "dist/ngx-file-uploader-demo",
             "index": "src/index.html",
             "main": "src/main.ts",

@@ -7,9 +7,17 @@ import {
   Output,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { WebcamInitError, WebcamImage, WebcamUtil } from 'ngx-webcam';
-import { Subject, noop, Observable } from 'rxjs';
+
 import { jsPDF } from 'jspdf';
+import { WebcamImage, WebcamInitError, WebcamUtil } from 'ngx-webcam';
+import { noop, Observable, Subject } from 'rxjs';
+
+export interface FileList {
+  data: FileReader['result'];
+  id?: number;
+  name?: string;
+  size?: number;
+}
 
 @Component({
   selector: 'lib-ngx-file-uploader',
@@ -18,50 +26,43 @@ import { jsPDF } from 'jspdf';
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      // tslint:disable-next-line:no-forward-ref
       useExisting: forwardRef(() => NgxFileUploaderComponent),
       multi: true,
     },
   ],
 })
 export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
-  public urls = new Array<any>();
-  public selectFileType = true;
-  public fileList = new Array<any>();
-  public fileType = '';
-  public message = '';
-  public pdfCreated = false;
-  public messageType = '';
-  public liveCamera = false;
-  public pdfAvailable = false;
-  public mobile = false;
-  public UploadCaptions = false;
-  @Input() public singleFile: any;
-  @Input() public formEntry: any;
-  @Input() public srcUrl: any;
-  public multiple = true;
-  public fileUpload = false;
-  public fieType = '';
-  public both = true;
-  public merge = false;
-  public backButton = false;
-  @Input() public source: any;
-  @Output() public fileChanged: EventEmitter<any> = new EventEmitter();
-  @Output() public uploadData: EventEmitter<any> = new EventEmitter();
-  @Output() public _onClear: EventEmitter<any> = new EventEmitter();
-  public _imagePath = '';
-  public showWebcam = true;
-  public allowCameraSwitch = true;
-  public multipleWebcamsAvailable = false;
-  public deviceId = '';
-  public videoOptions: MediaTrackConstraints = {
-    // width: {ideal: 1024},
-    // height: {ideal: 576}
-  };
-  public errors: WebcamInitError[] = [];
+  @Input() canUploadMultipleFiles = false;
+  @Input() isFormEntryMode = true;
+  @Input() srcUrl = '';
+  @Output() fileChanged: EventEmitter<any> = new EventEmitter();
+  @Output() inputCleared: EventEmitter<any> = new EventEmitter();
+  @Output() uploadData: EventEmitter<any> = new EventEmitter();
 
-  // latest snapshot
-  public webcamImage = null;
+  canSwitchCameras = true;
+  deviceId: string = '';
+  errors: WebcamInitError[] = [];
+  fileList = new Array<WebcamImage | FileList>();
+  fileType = '';
+  hasBothImagesAndPdfs = true;
+  hasFilesToUpload = false;
+  hasMultipleFiles = true;
+  hasMultipleWebcams = false;
+  hasPdf = false;
+  isBackButtonEnabled = false;
+  isLiveCamera = false;
+  isMergeButtonEnabled = false;
+  isMobile = false;
+  isPdfCreated = false;
+  isReadyToUploadFiles = false;
+  isSelectingFileType = true;
+  isShowingWebcam = true;
+  isUploading = false;
+  message = '';
+  messageType = '';
+  urls = new Array<any>();
+  videoOptions: MediaTrackConstraints = {};
+  webcamImage = null;
 
   // webcam snapshot trigger
   private trigger: Subject<void> = new Subject<void>();
@@ -69,27 +70,27 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
   private nextWebcam: Subject<boolean | string> = new Subject<
     boolean | string
   >();
-  public uploading = false;
   // The internal data model
   private innerValue: any = '';
-
-  // Placeholders for the callbacks which are later providesd
+  // Placeholders for the callbacks which are later provided
   // by the Control Value Accessor
   private onTouchedCallback: () => void = noop;
   private onChangeCallback: (_: any) => void = noop;
 
-  public ngOnInit() {
-    if (this.singleFile) {
-      this.multiple = false;
-      this.both = false;
+  ngOnInit() {
+    if (!this.canUploadMultipleFiles) {
+      this.hasMultipleFiles = false;
+      this.hasBothImagesAndPdfs = false;
     }
+
     if (window.screen.width <= 692) {
       // 768px portrait
-      this.mobile = true;
+      this.isMobile = true;
     }
+
     WebcamUtil.getAvailableVideoInputs().then(
       (mediaDevices: MediaDeviceInfo[]) => {
-        this.multipleWebcamsAvailable = mediaDevices && mediaDevices.length > 1;
+        this.hasMultipleWebcams = mediaDevices && mediaDevices.length > 1;
       }
     );
   }
@@ -106,39 +107,41 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
       this.onChangeCallback(v);
     }
   }
-  // Current time string.
 
-  public writeValue(value: any) {
+  // Current time string
+  writeValue(value: any) {
     if (value !== this.innerValue) {
       this.innerValue = value;
     }
   }
 
   // From ControlValueAccessor interface
-  public registerOnChange(fn: any) {
+  registerOnChange(fn: any) {
     this.onChangeCallback = fn;
   }
 
   // From ControlValueAccessor interface
-  public registerOnTouched(fn: any) {
+  registerOnTouched(fn: any) {
     this.onTouchedCallback = fn;
   }
 
-  public onBlur() {
+  onBlur() {
     this.onTouchedCallback();
   }
 
-  public onChange(event: any) {
+  onChange(event: any) {
     const files = event.srcElement.files;
-    this.uploading = true;
+    this.isUploading = true;
     // const fileToLoad = files;
-    if (this.fieType === 'liveCamera') {
-      this.UploadCaptions = true;
+
+    if (this.fileType === 'liveCamera') {
+      this.isReadyToUploadFiles = true;
     }
+
     if (files) {
       for (const file of files) {
         const fileReader = new FileReader();
-        if (this.fileType === 'pdf' && this.formEntry) {
+        if (this.fileType === 'pdf' && this.isFormEntryMode) {
           this.urls = [];
           this.fileList = [];
         }
@@ -147,7 +150,7 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
           const name = file.name;
           const fileSize = Math.round(file.size / 1024);
           if (fileSize >= 3072) {
-            this.message = 'File Too large';
+            this.message = 'File size exceeds limit';
             this.messageType = 'danger';
             this.messageViewTimeout();
             this.back();
@@ -158,7 +161,7 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
               name: name,
               size: fileSize,
             };
-            if (!this.singleFile) {
+            if (this.canUploadMultipleFiles) {
               this.urls.push(payload);
               this.fileList.push(payload);
             } else {
@@ -171,65 +174,70 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
       }
     }
   }
-  public messageViewTimeout() {
+
+  messageViewTimeout() {
     setTimeout(() => {
       this.message = '';
-    }, 12000);
+    }, 5000);
   }
-  public clear() {
+
+  clear() {
     this.value = '';
     this.onChangeCallback(this.value);
     this.urls = [];
     this.back();
-    this._onClear.emit();
+    this.inputCleared.emit();
   }
-  public back() {
-    this.selectFileType = true;
+
+  back() {
+    this.isSelectingFileType = true;
     this.urls = [];
-    this.backButton = false;
+    this.isBackButtonEnabled = false;
     this.fileList = [];
-    this.UploadCaptions = false;
-    this.singleFile = false;
-    this.pdfAvailable = false;
-    this.merge = false;
-    this.fileUpload = false;
-    this.liveCamera = false;
+    this.isReadyToUploadFiles = false;
+    this.canUploadMultipleFiles = true;
+    this.hasPdf = false;
+    this.isMergeButtonEnabled = false;
+    this.hasFilesToUpload = false;
+    this.isLiveCamera = false;
   }
-  public toggleVisibility(filetype: string) {
-    this.fieType = filetype;
+
+  toggleVisibility(filetype: string) {
+    this.fileType = filetype;
+    console.log('filetype: ', filetype);
     if (filetype === 'image') {
-      if (this.formEntry) {
+      if (this.isFormEntryMode) {
         this.message =
-          ' Images will be merged into one pdf when uploaded in formentry';
+          'Images will be merged into one pdf when uploaded in formentry';
         this.messageType = 'danger';
         this.messageViewTimeout();
       }
       this.fileType = 'image/png, image/jpeg, image/gif';
-      this.fileUpload = true;
+      this.hasFilesToUpload = true;
     } else if (filetype === 'pdf') {
-      if (this.formEntry) {
-        this.multiple = false;
+      if (this.isFormEntryMode) {
+        this.hasMultipleFiles = false;
       }
       this.fileType = 'application/pdf';
-      this.pdfAvailable = true;
-      this.fileUpload = true;
+      this.hasPdf = true;
+      this.hasFilesToUpload = true;
     } else if (filetype === 'both') {
-      this.fileType = 'image/png, image/jpeg, image/gif , application/pdf';
-      this.pdfAvailable = true;
-      this.fileUpload = true;
+      this.fileType = 'image/png, image/jpeg, image/gif, application/pdf';
+      this.hasPdf = true;
+      this.hasFilesToUpload = true;
     } else if (filetype === 'liveCamera') {
-      this.liveCamera = true;
+      this.isLiveCamera = true;
     }
-    this.selectFileType = false;
-    this.backButton = true;
+    this.isSelectingFileType = false;
+    this.isBackButtonEnabled = true;
     if (this.value) {
       this.clear();
     }
   }
 
-  public upload() {
-    if (!this.pdfCreated) {
-      if (this.formEntry && this.pdfAvailable === false) {
+  upload() {
+    if (!this.isPdfCreated) {
+      if (this.isFormEntryMode && !this.hasPdf) {
         this.mergeImages();
       }
     }
@@ -237,22 +245,22 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
     this.back();
   }
 
-  public mergeImages() {
+  mergeImages() {
     const doc = new jsPDF({ compress: true });
-    // doc.page = 1;
-    for (let i = 0; i < this.fileList.length; i++) {
+
+    this.fileList.forEach((file) => {
       const imageData =
-        this.fileList[i].data || this.fileList[i].imageAsDataUrl;
+        (file as FileList).data?.toString() ||
+        (file as WebcamImage).imageAsDataUrl;
+
       doc.addImage(imageData, 'JPG', 10, 10, 190, 270, undefined, 'FAST');
-      doc.setFont('courier', 'normal', 400);
-      doc.text('page ', 180, 290);
-      // doc.page++;
-      if (i < this.fileList.length) {
-        doc.addPage();
-      }
-    }
+      doc.setFontSize(10);
+      doc.text('Page ' + doc.getCurrentPageInfo().pageNumber, 180, 290);
+      doc.addPage();
+    });
+
     doc.setProperties({
-      title: 'Ampath Medical Data',
+      title: 'AMPATH Point of Care Medical Data',
       author: 'POC',
       creator: 'AMPATH',
     });
@@ -266,21 +274,24 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
     const payload = {
       data,
     };
-    if (this.formEntry) {
+
+    if (this.isFormEntryMode) {
       this.fileList = [];
       this.urls = [];
     }
+
     this.message =
-      'The images have been merged into one pdf, You can now upload';
+      'The images have been merged into a PDF file. Continue to upload.';
     this.messageType = 'success';
     this.messageViewTimeout();
     this.fileList.push(payload);
     this.urls.push(payload);
-    this.singleFile = false;
-    this.UploadCaptions = true;
-    this.pdfCreated = true;
+    this.canUploadMultipleFiles = true;
+    this.isReadyToUploadFiles = true;
+    this.isPdfCreated = true;
   }
-  public delete(urls: any) {
+
+  delete(urls: any) {
     for (let i = 0; i <= this.urls.length; i++) {
       if (urls.data) {
         if (this.urls[i].data === urls.data) {
@@ -298,63 +309,66 @@ export class NgxFileUploaderComponent implements ControlValueAccessor, OnInit {
     }
     // enabling merge button if remaining on urls is images
     const re = /pdf/gi;
+
     for (let index = 0; index < this.urls.length; index++) {
       if (this.urls[index].data.search(re) === -1) {
-        this.pdfAvailable = true;
+        this.hasPdf = true;
         break;
       } else {
-        this.merge = true;
-        this.pdfAvailable = false;
-        this.fileUpload = true;
+        this.isMergeButtonEnabled = true;
+        this.hasPdf = false;
+        this.hasFilesToUpload = true;
       }
     }
   }
-  public triggerSnapshot(): void {
-    this.UploadCaptions = true;
+
+  triggerSnapshot() {
+    this.isReadyToUploadFiles = true;
     this.trigger.next();
   }
 
-  public toggleWebcam(): void {
-    this.showWebcam = !this.showWebcam;
+  toggleWebcam() {
+    this.isShowingWebcam = !this.isShowingWebcam;
   }
 
-  public handleInitError(error: WebcamInitError): void {
+  handleInitError(error: WebcamInitError) {
     this.errors.push(error);
   }
 
-  public showNextWebcam(directionOrDeviceId: boolean | string): void {
+  showNextWebcam(directionOrDeviceId: boolean | string) {
     // true => move forward through devices
     // false => move backwards through devices
     // string => move to device with given deviceId
     this.nextWebcam.next(directionOrDeviceId);
   }
 
-  public handleImage(webcamImage: WebcamImage): void {
-    if (this.singleFile) {
+  handleImage(webcamImage: WebcamImage) {
+    if (!this.canUploadMultipleFiles) {
       this.urls = [];
       this.fileList = [];
       this.pushData(webcamImage);
     }
     this.pushData(webcamImage);
   }
-  // @ts-ignore
-  public pushData(webcamImage) {
+
+  pushData(webcamImage: WebcamImage) {
     this.urls.push(webcamImage);
     this.fileList.push(webcamImage);
   }
 
-  public cameraWasSwitched(deviceId: string): void {
+  cameraWasSwitched(deviceId: string) {
     this.deviceId = deviceId;
   }
 
-  public get triggerObservable(): Observable<void> {
+  get triggerObservable(): Observable<void> {
     return this.trigger.asObservable();
   }
 
-  public get nextWebcamObservable(): Observable<boolean | string> {
+  get nextWebcamObservable(): Observable<boolean | string> {
     return this.nextWebcam.asObservable();
   }
-  public getUrl() {
+
+  getUrl() {
     const file = this.srcUrl;
     window.open(file, '_blank');
   }

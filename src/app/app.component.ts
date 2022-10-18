@@ -6,13 +6,13 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  public dataModel = '';
+  dataModel = '';
 
-  public upload(file: any) {
+  upload(file: FileList) {
     this.dataModel = 'https://unsplash.it/200/300';
   }
 
-  public clear() {
+  clear() {
     this.dataModel = '';
   }
 }

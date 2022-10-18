@@ -1,7 +1,7 @@
-Image {{ dataModel }}
+<!-- Image {{ dataModel }}  -->
 <lib-ngx-file-uploader
   [(ngModel)]="dataModel"
-  (onClear)="clear()"
+  (inputCleared)="clear()"
   (fileChanged)="upload($event)"
 >
 </lib-ngx-file-uploader>

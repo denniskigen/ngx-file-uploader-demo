@@ -8,7 +8,7 @@
   </button>
   {{ message }}
 </div>
-<div *ngIf="backButton">
+<div *ngIf="isBackButtonEnabled">
   <button
     class="btn btn-default image-preview-primary"
     type="button"
@@ -17,7 +17,7 @@
     <span class="glyphicon glyphicon-circle-arrow-left"></span> Back
   </button>
 </div>
-<div *ngIf="selectFileType" class="panel panel-primary">
+<div *ngIf="isSelectingFileType" class="panel panel-primary">
   <div class="card">
     <div class="card-body">
       <a (click)="getUrl()" style="cursor: pointer"
@@ -59,12 +59,6 @@
 
       <div class="clear-both"></div>
     </div>
-    <!-- <div *ngIf="both" class="row-cb">
-<span><input name="option" id="both" (change)="toggleVisibility('both')" type="checkbox" /></span>
-<label  for="both">Image & PDF</label>
-
-<div class="clear-both"></div>
-</div> -->
     <div class="row-cb">
       <span
         ><input
@@ -74,7 +68,6 @@
           type="checkbox"
       /></span>
       <label for="camera">Live Camera</label>
-
       <div class="clear-both"></div>
     </div>
   </div>
@@ -112,7 +105,7 @@
   </div>
   <div class="panel-footer">
     <button
-      *ngIf="UploadCaptions"
+      *ngIf="isReadyToUploadFiles"
       type="button"
       (click)="upload()"
       class="button pull-right"
@@ -120,18 +113,21 @@
       <span class="glyphicon glyphicon-upload"></span> Upload Files
     </button>
     <button
-      *ngIf="(!pdfAvailable && fileUpload) || liveCamera || merge"
+      style="margin: 1rem"
+      *ngIf="
+        (!hasPdf && hasFilesToUpload) || isLiveCamera || isMergeButtonEnabled
+      "
       type="button"
       [disabled]="!urls[1]"
       (click)="mergeImages()"
-      title="merge the images as pages in one pdf document"
+      title="Merge the images into individual pages of a single PDF document"
       class="button"
     >
       <span class="glyphicon glyphicon-upload"></span> Merge Files
     </button>
   </div>
 </div>
-<div *ngIf="fileUpload">
+<div *ngIf="hasFilesToUpload">
   <div class="input-group">
     <input type="text" class="form-control" readonly [(ngModel)]="value" />
     <div class="input-group-btn">
@@ -139,7 +135,7 @@
         <span class="glyphicon glyphicon-folder-open"></span>
         <span class="image-preview-input-title">SELECT FILE</span>
         <input
-          *ngIf="multiple"
+          *ngIf="hasMultipleFiles"
           type="file"
           multiple
           accept="{{ fileType }}"
@@ -148,7 +144,7 @@
           (change)="onChange($event)"
         />
         <input
-          *ngIf="!multiple"
+          *ngIf="!hasMultipleFiles"
           type="file"
           accept="{{ fileType }}"
           (blur)="onBlur()"
@@ -169,9 +165,9 @@
       </button>
     </div>
   </div>
-  <div *ngIf="!mobile" class="image-upload-wrap">
+  <div *ngIf="!isMobile" class="image-upload-wrap">
     <input
-      *ngIf="multiple"
+      *ngIf="hasMultipleFiles"
       class="file-upload-input"
       type="file"
       (change)="onChange($event)"
@@ -179,7 +175,7 @@
       accept="{{ fileType }}"
     />
     <input
-      *ngIf="!multiple"
+      *ngIf="!hasMultipleFiles"
       class="file-upload-input"
       type="file"
       (change)="onChange($event)"
@@ -190,7 +186,7 @@
     </div>
   </div>
 </div>
-<div *ngIf="liveCamera">
+<div *ngIf="isLiveCamera">
   <div style="text-align: center">
     <div>
       <webcam
@@ -198,8 +194,8 @@
         [width]="450"
         [trigger]="triggerObservable"
         (imageCapture)="handleImage($event)"
-        *ngIf="showWebcam"
-        [allowCameraSwitch]="allowCameraSwitch"
+        *ngIf="isShowingWebcam"
+        [allowCameraSwitch]="canSwitchCameras"
         [switchCamera]="nextWebcamObservable"
         [videoOptions]="videoOptions"
         [imageQuality]="1"
@@ -211,14 +207,14 @@
         class="btn btn-default image-preview-clear"
         (click)="triggerSnapshot()"
       >
-        <span class="glyphicon glyphicon-camera"></span>Take a Snapshot
+        <span class="glyphicon glyphicon-camera"></span>Take a snapshot
       </button>
       <button
         class="btn btn-default image-preview-clear"
         (click)="showNextWebcam(true)"
-        [disabled]="!multipleWebcamsAvailable"
+        [disabled]="!hasMultipleWebcams"
       >
-        Change Camera
+        Change camera
       </button>
     </div>
   </div>

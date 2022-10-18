@@ -94,6 +94,12 @@
             "styles": ["src/styles.scss"],
             "scripts": []
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+          }
         }
       }
     },
@@ -125,9 +131,18 @@
             "tsConfig": "projects/ngx-file-uploader/tsconfig.spec.json",
             "karmaConfig": "projects/ngx-file-uploader/karma.conf.js"
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/ngx-file-uploader/**/*.ts",
+              "projects/ngx-file-uploader/**/*.html"
+            ]
+          }
         }
       }
     }
   },
-  "defaultProject": "ngx-file-uploader-demo"
+  "defaultProject": "ngx-file-uploader"
 }

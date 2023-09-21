@@ -47,7 +47,7 @@ Thumbs.db
 
 .angular
 
-# Yarn 3
+# Yarn 3 files
 .pnp.*
 .yarn/*
 !.yarn/patches

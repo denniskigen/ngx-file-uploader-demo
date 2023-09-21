@@ -8378,9 +8378,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ngx-file-uploader-demo@workspace:.":
+"ngx-file-uploader-openmrs@workspace:.":
   version: 0.0.0-use.local
-  resolution: "ngx-file-uploader-demo@workspace:."
+  resolution: "ngx-file-uploader-openmrs@workspace:."
   dependencies:
     "@angular-devkit/build-angular": ^14.2.12
     "@angular-eslint/builder": ^13.5.0

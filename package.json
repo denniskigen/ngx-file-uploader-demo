@@ -1,6 +1,6 @@
 {
-  "name": "ngx-file-uploader-demo",
-  "version": "3.0.0",
+  "name": "ngx-file-uploader-openmrs",
+  "version": "3.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -11,7 +11,6 @@
     "watch": "ng build --watch --configuration development",
     "explore": "source-map-explorer dist/ngx-file-uploader-demo/**.js"
   },
-  "private": true,
   "dependencies": {
     "@angular/animations": "^14.3.0",
     "@angular/common": "^14.3.0",
